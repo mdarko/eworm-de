@@ -8,7 +8,7 @@
 # https://git.eworm.de/cgit/routeros-scripts/about/
 
 # expected configuration version
-:global ExpectedConfigVersion 22;
+:global ExpectedConfigVersion 23;
 
 # global variables not to be changed by user
 :global GlobalFunctionsReady false;
@@ -61,6 +61,15 @@
        [ / certificate settings get crl-store ] = "system") do={
     $LogPrintExit warning ("This system has low free flash space but " . \
       "is configured to download certificate CRLs to system!") false;
+  }
+
+  # TODO: Remove on 2021-09-30
+  :local Cert [ / certificate find where fingerprint="0687260331a72403d909f105e69bcf0d32e1bd2493ffc6d9206d11bcd6770739" ];
+  :if ([ :len $Cert ] > 0) do={
+    :if ([ / certificate print count-only where fingerprint="25847d668eb4f04fdd40b12b6b0740c567da7d024308eb6c2c96fe41d9de218d" ] > 0) do={
+      $CertificateDownload "Let's Encrypt Authority X3";
+    }
+    / certificate remove $Cert;
   }
 
   :if ([ / certificate print count-only where common-name=$CommonName ] = 0) do={
