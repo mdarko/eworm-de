@@ -70,19 +70,17 @@
     }
   }
 
-  :local CertVal;
-  :local Issuer $CommonName;
+  :local CertVal [ / certificate get [ find where common-name=$CommonName ] ];
   :do {
-    :if ([ / certificate print count-only where common-name=$Issuer ] = 0) do={
+    :if ([ / certificate print count-only where skid=($CertVal->"akid") ] = 0) do={
       $LogPrintExit info ("Certificate chain for \"" . $CommonName . \
-        "\" is incomplete, missing \"" . $Issuer . "\".") false;
+        "\" is incomplete, missing \"" . ([ $ParseKeyValueStore ($CertVal->"issuer") ]->"CN") . "\".") false;
       :if ([ $CertificateDownload $CommonName ] = false) do={
         :return false;
       }
     }
-    :set CertVal [ / certificate get [ find where common-name=$Issuer ] ];
-    :set Issuer ([ $ParseKeyValueStore ($CertVal->"issuer") ]->"CN");
-  } while=($Issuer != $CertVal->"common-name");
+    :set CertVal [ / certificate get [ find where skid=($CertVal->"akid") ] ];
+  } while=(($CertVal->"akid") != "" && ($CertVal->"akid") != ($CertVal->"skid"));
   :return true;
 }
 
